@@ -33,7 +33,7 @@ public class Apple extends Body {
   }
 
   /**
-   * draws this Apple as a Red square
+   * Draws this Apple as a Red square
    */
   public void draw(Graphics g) {
     g.setColor(Color.RED);

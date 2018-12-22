@@ -17,7 +17,7 @@ public class Panel extends JPanel implements Runnable {
   // W is the Width of the Panel and H is the Height
   private static final int W = 800, H = 800;
   private Thread thread;
-  private boolean running = false;
+  private boolean isSnakeAlive;
   private final int TILESIZE = 40;
   // The Snake is a List of Bodies
   private ArrayList<Body> snake;
@@ -31,7 +31,7 @@ public class Panel extends JPanel implements Runnable {
   private Apple a;
   // This is used to control the speed of the game
   private int millis = 80;
-  private JLabel label;
+  private int score;
 
   /**
    * Upon making the Panel, the game starts
@@ -40,7 +40,6 @@ public class Panel extends JPanel implements Runnable {
     setPreferredSize(new Dimension(W, H));
     // setFocusable for the controls to work
     setFocusable(true);
-    setLabel(new JLabel("Score: " + Math.pow(2, size)));
     // Add the controls
     addKeyListener(new KeyListener() {
 
@@ -119,13 +118,14 @@ public class Panel extends JPanel implements Runnable {
     // If the Apple isHitFrom the head of the snake, the snakes size increases
     if (a.isHitFrom(snake.get(snake.size() - 1))) {
       size++;
+      score = (int) (size * size * 0.7);
       // After the old Apple is eaten new Apple is made
       a = new Apple(W, H, TILESIZE);
     }
     // This checks if the Snake eats itself.
     for (int i = 0; i < snake.size() - 1; i++) {
       if (snake.get(i).isHitFrom(snake.get(snake.size() - 1))) {
-        System.out.println("You lost. Your score: " + (size * size));
+        isSnakeAlive = false;
         // Snake becomes small again
         size = 3;
       }
@@ -149,19 +149,39 @@ public class Panel extends JPanel implements Runnable {
 
   }
 
-  /**
-   * Makes the board of the game
-   */
   public void paint(Graphics g) {
+    // First make the background
     makeGrid(g);
+    // Then the snake
     for (int i = 0; i < snake.size(); i++) {
       snake.get(i).draw(g);
     }
+    // Then the apple
     a.draw(g);
+    /*
+     * Then the score, so it is always on top
+     */
+    drawScore(g);
+    // If the game is over print highscore information
+    if (!isSnakeAlive) {
+      g.setColor(Color.yellow);
+      if (score > HighscoreManager.loadHighscore()) {
+        g.drawString("You scored " + score + " points. It's a new record !!!",
+            50, 400);
+        // Save new highscore
+        HighscoreManager.save(score);
+      } else {
+        g.drawString(
+            "You didn't manage to break your "
+                + HighscoreManager.loadHighscore() + " point highscore",
+            0, 400);
+
+      }
+    }
   }
 
   public void start() {
-    running = true;
+    isSnakeAlive = true;
     thread = new Thread(this, "game loop");
     thread.start();
   }
@@ -172,15 +192,29 @@ public class Panel extends JPanel implements Runnable {
 
   @Override
   public void run() {
-    while (running) {
+    while (isSnakeAlive) {
+      // run logic
       gameplay();
+      // draw Graphics
       repaint();
+      // wait
       try {
         Thread.sleep(millis);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
-
+      /*
+       * If snake dies, wait for player to read message and make the snake alive
+       * again so the game can continue
+       */
+      if (!isSnakeAlive) {
+        try {
+          Thread.sleep(2000);
+          isSnakeAlive = true;
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
     }
 
   }
@@ -192,7 +226,7 @@ public class Panel extends JPanel implements Runnable {
    *          Graphics Object
    */
   public void makeGrid(Graphics g) {
-    g.setColor(Color.black);
+    g.setColor(Color.BLACK);
     g.fillRect(0, 0, W, H);
     /*
      * This code makes helping lines for testing purposes
@@ -200,6 +234,12 @@ public class Panel extends JPanel implements Runnable {
      * g.drawLine(i*TILESIZE, 0, i*TILESIZE, H); } for (int
      * i=0;i<H/TILESIZE;i++) { g.drawLine(0, i*TILESIZE, W, i*TILESIZE); }
      */
+  }
+
+  public void drawScore(Graphics g) {
+    g.setColor(Color.blue);
+    g.setFont(new Font("Arial", Font.BOLD, 30));
+    g.drawString("Score: " + score, 10, 30);
   }
 
   /**
@@ -238,14 +278,6 @@ public class Panel extends JPanel implements Runnable {
       }
     }
 
-  }
-
-  public JLabel getLabel() {
-    return label;
-  }
-
-  public void setLabel(JLabel label) {
-    this.label = label;
   }
 
 }
