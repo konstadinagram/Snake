@@ -77,10 +77,7 @@ public class Body {
    * @return true if the two Bodies collide, false if the don't
    */
   public boolean isHitFrom(Body b) {
-    if (this.getX() == b.getX() && this.getY() == b.getY()) {
-      return true;
-    } else
-      return false;
+    return (this.getX() == b.getX() && this.getY() == b.getY());
   }
 
 }
